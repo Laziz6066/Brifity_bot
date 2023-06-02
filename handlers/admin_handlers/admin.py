@@ -9,7 +9,7 @@ from loader import dp
 async def show_profiles(message: types.Message):
     db, cur = await db_start()
     profiles = await get_profiles(cur)
-
+    list_admin = [652374604, 5489832625, 661394290]
     if profiles:
         text = ""
         for profile in profiles:
@@ -17,9 +17,9 @@ async def show_profiles(message: types.Message):
 
             text += f"\nName: {name}\nAge: {age}\nLevel: {level}" \
                     f"\nConvenient time: {period}\n" \
-                    f"Number: {number_phone}\nCourse: {course}\n\nDate register: : {teacher}\n{user_id}"
+                    f"Number: {number_phone}\nCourse: {course}\n\nDate register: : {teacher}\n{user_id}\n\n"
 
-        if message.from_user.id == 5489832625:
+        if message.from_user.id in list_admin:
             await message.reply(text)
         else:
             await message.answer('У вас нет прав доступа')

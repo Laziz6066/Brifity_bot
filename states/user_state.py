@@ -7,6 +7,13 @@ from keyboards.reply_kb import teacher_list_kb, ok_kb, lang_lev_kb
 from aiogram.types import ReplyKeyboardRemove
 from database.user_info import db_start
 from datetime import datetime
+import re
+
+
+def check_time_format(time_string):
+    pattern = r'^([01]\d|2[0-3]):([0-5]\d)$'
+    match = re.match(pattern, time_string)
+    return bool(match)
 
 
 class StudentRegister(StatesGroup):
@@ -31,6 +38,10 @@ async def load_name(message: types.Message, state: FSMContext):
 async def load_age(message: types.Message, state: FSMContext):
     if not message.text.isdigit():
         await message.answer("Yoshingizni raqamda ko'rsating")
+    elif int(message.text) < 15:
+        await message.answer("Bizning kurslarimizga 15 yoshdan boshlab ro'yxatdan o'tishingiz mumkin")
+    elif int(message.text) > 40:
+        await message.answer("Bizning kurslarimizga 40 yoshdan baland bo'lmagan o'quvchilarni qabul qilamiz")
     else:
         async with state.proxy() as data:
             data['age'] = message.text
@@ -39,31 +50,40 @@ async def load_age(message: types.Message, state: FSMContext):
 
 
 async def load_level(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['level'] = message.text
-        data['teacher'] = datetime.now().replace(microsecond=0)
+    course = ["Boshlang'ich (Beginner)", "Elementar (Elementary)", "O'rtachadan past (Pre-Intermediate)",
+              "O'rtacha (Intermediate)", "O'rtachadan yuqori (Upper-Intermediate)", "Mukammal (Advanced)",
+              "Professional (Proficiency)"]
+    if message.text in course:
+        async with state.proxy() as data:
+            data['level'] = message.text
+            data['teacher'] = datetime.now().replace(microsecond=0)
 
-    user_id = str(message.from_user.id)
-    db, cur = await db_start()
+        user_id = str(message.from_user.id)
+        db, cur = await db_start()
 
-    if db and cur:
-        await edit_profile(state, user_id, data['course'], cur)
-        await message.reply("O'zingizga qulay bo'lgan vaqtni yozing.\n(00:00) formatida"
-                            "\ndarslar 2 soat davom etadi! ", reply_markup=ReplyKeyboardRemove())
-        await StudentRegister.next()
+        if db and cur:
+            await edit_profile(state, user_id, data['course'], cur)
+            await message.reply("O'zingizga qulay bo'lgan vaqtni yozing.\n(00:00) formatida"
+                                "\ndarslar 2 soat davom etadi! ", reply_markup=ReplyKeyboardRemove())
+            await StudentRegister.next()
+        else:
+            await message.reply('An error occurred while initializing the database. Please try again later.')
     else:
-        await message.reply('An error occurred while initializing the database. Please try again later.')
+        await message.answer("Iltimos pastagi ro'yxatdan birini tanlang!")
 
 
 async def load_time_ed(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data['period'] = message.text
-    await message.reply('Telefon raqamingizni kiriting: 998xxxxxxxxx')
-    await StudentRegister.next()
+    if check_time_format(message.text):
+        async with state.proxy() as data:
+            data['period'] = message.text
+        await message.reply('Telefon raqamingizni kiriting: 998xxxxxxxxx')
+        await StudentRegister.next()
+    else:
+        await message.answer("Vaqtni to'g'ri formatda kiriting masalan: 14:00")
 
 
 async def load_phone(message: types.Message, state: FSMContext):
-    if not message.text.isdigit() or len(message.text) != 12:
+    if not message.text.isdigit() or len(message.text) != 12 or not message.text.startswith('998'):
         await message.answer("Telefon raqamingizni yuqorida ko'rsatilgan formatda kiriting!")
     else:
         async with state.proxy() as data:
