@@ -25,7 +25,7 @@ def teacher_ikb():
 
 def course_content_ikb():
     ikb = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text='Back', callback_data='ielts_back')],
-        [InlineKeyboardButton(text='Registration', callback_data='ielts_registration')]
+        [InlineKeyboardButton(text='Orqaga', callback_data='ielts_back')],
+        [InlineKeyboardButton(text="Ro'yxatdan o'tish", callback_data="ielts_registration")]
     ])
     return ikb
